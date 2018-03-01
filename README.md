@@ -3,7 +3,7 @@ This is a [Vagrant](https://www.vagrantup.com/) Environment for a [SonarQube](ht
 This will:
 
 * Install a SonarQube instance and configure it through its [Web API](http://docs.sonarqube.org/display/DEV/Web+API).
-* Install [Visual Studio Community 2015](https://www.visualstudio.com/en-us/products/visual-studio-community-vs.aspx).
+* Install [Visual Studio Build Tools 2017](https://www.visualstudio.com/downloads/).
 * Install the [MSBuild SonarQube Runner](http://docs.sonarqube.org/display/SCAN/Analyzing+with+SonarQube+Scanner+for+MSBuild).
 * Analyse a C# project ([MailBounceDetector](https://github.com/rgl/MailBounceDetector)); including its [XUnit](https://xunit.github.io/) Unit Tests and an [OpenCover](https://github.com/OpenCover/opencover) Code Coverage report.
 
