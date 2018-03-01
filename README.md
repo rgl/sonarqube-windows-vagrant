@@ -10,17 +10,7 @@ This will:
 
 # Usage
 
-Build the base box with:
-
-```bash
-git clone https://github.com/joefitzgerald/packer-windows
-cd packer-windows
-# this will take ages so leave it running over night...
-packer build windows_2012_r2.json
-vagrant box add windows_2012_r2 windows_2012_r2_virtualbox.box
-rm *.box
-cd ..
-```
+Build and install the [Windows Base Box](https://github.com/rgl/windows-2016-vagrant).
 
 Install the needed plugins:
 
