@@ -5,12 +5,9 @@ choco install -y visualstudiocode
 choco install -y notepad2
 choco install -y 7zip
 choco install -y googlechrome
-choco install -y baretail
-choco install -y procmon
-choco install -y procexp
 
 # dependencies.
-choco install -y --allow-empty-checksums jre8
+choco install -y jre8
 
 $sonarQubeUrl = 'http://localhost:9000'
 $sonarQubeUsername = 'admin'
@@ -18,9 +15,10 @@ $sonarQubePassword = 'admin'
 
 # download SonarQube.
 $path = "$($env:TEMP)\SonarQube"
-$sonarQubeZipUrl = "https://sonarsource.bintray.com/Distribution/sonarqube/sonarqube-6.0.zip"
-$sonarQubeZipHash = 'cecf45f35591a1419ef489d1bf13dfb0'
-$sonarQubeZip = "$path\sonarqube-6.0.zip"
+$sonarQubeVersion = '6.7.2'
+$sonarQubeZipUrl = "https://sonarsource.bintray.com/Distribution/sonarqube/sonarqube-$sonarQubeVersion.zip"
+$sonarQubeZipHash = '6efa2551d2c1f26cf40e000522226292'
+$sonarQubeZip = "$path\sonarqube-$sonarQubeVersion.zip"
 mkdir -Force $path | Out-Null
 (New-Object Net.WebClient).DownloadFile($sonarQubeZipUrl, $sonarQubeZip)
 $s = New-Object IO.FileStream $sonarQubeZip, 'Open'
@@ -32,15 +30,15 @@ if ($sonarQubeZipActualHash -ne $sonarQubeZipHash) {
 # extract it.
 $shell = New-Object -COM Shell.Application
 $shell.NameSpace($sonarQubeZip).items() | %{ $shell.NameSpace($path).CopyHere($_) }
-Move-Item "$path\sonarqube-6.0" C:\
+Move-Item "$path\sonarqube-$sonarQubeVersion" C:\
 # install the service.
-&C:\sonarqube-6.0\bin\windows-x86-64\InstallNTService.bat
+&C:\sonarqube-$sonarQubeVersion\bin\windows-x86-64\InstallNTService.bat
 if ($LASTEXITCODE) {
     throw "failed to install the SonarQube service with LASTEXITCODE=$LASTEXITCODE"
 }
 # TODO run the service in a non-system account.
 # start the service.
-&C:\sonarqube-6.0\bin\windows-x86-64\StartNTService.bat
+&C:\sonarqube-$sonarQubeVersion\bin\windows-x86-64\StartNTService.bat
 if ($LASTEXITCODE) {
     throw "failed to start the SonarQube service with LASTEXITCODE=$LASTEXITCODE"
 }
@@ -56,10 +54,15 @@ Wait-ForReady
 
 # list out-of-box installed plugins. at the time of writing they were:
 #   csharp
+#   flex
 #   java
 #   javascript
+#   php
+#   python
 #   scmgit
 #   scmsvn
+#   typescript
+#   xml
 (Invoke-RestMethod -Headers $headers -Method Get -Uri $sonarQubeUrl/api/plugins/installed).plugins `
     | Sort-Object -Property key `
     | ForEach-Object {"Out-of-box installed plugin: $($_.key)"}
@@ -68,7 +71,6 @@ Wait-ForReady
 @(
     'ldap'            # http://docs.sonarqube.org/display/PLUG/LDAP+Plugin
     'checkstyle'      # https://github.com/checkstyle/sonar-checkstyle
-    'xml'             # http://docs.sonarqube.org/display/PLUG/XML+Plugin
 ) | %{
     Write-Host "installing the $_ plugin..."
     Invoke-RestMethod -Headers $headers -Method Post -Uri $sonarQubeUrl/api/plugins/install -Body @{key=$_}
@@ -170,4 +172,4 @@ Write-Host 'Installed Plugins:'
 Write-Host "You can now access the SonarQube Web UI at $sonarQubeUrl"
 Write-Host "The default user and password are admin"
 Write-Host "Check for updates at $sonarQubeUrl/updatecenter/installed"
-Write-Host "Check the logs at C:\sonarqube-6.0\logs"
+Write-Host "Check the logs at C:\sonarqube-$sonarQubeVersion\logs"
