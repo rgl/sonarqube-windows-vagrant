@@ -144,9 +144,9 @@ dir -Recurse */bin/*.Tests.dll | ForEach-Object {
         -register:path64 `
         '-filter:+[*]* -[*.Tests*]* -[*]*.*Config -[xunit.*]*' `
         '-target:xunit.console.exe' `
-        "-targetargs:$($_.Name) -nologo -noshadow -xml xunit-results.xml"
+        "-targetargs:$($_.Name) -nologo -noshadow -xml xunit-report.xml"
     ReportGenerator.exe `
-        -reports:opencover-results.xml `
+        -reports:opencover-report.xml `
         -targetdir:coverage-report
     Compress-Archive `
         -CompressionLevel Optimal `
