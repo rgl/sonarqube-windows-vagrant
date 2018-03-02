@@ -128,14 +128,13 @@ git config --global push.default simple
 Push-Location $env:USERPROFILE
 git clone --quiet https://github.com/rgl/MailBounceDetector.git
 cd MailBounceDetector
-nuget restore
 MSBuild.SonarQube.Runner begin `
     '/k:github.com_rgl_MailBounceDetector' `
     '/n:github.com/rgl/MailBounceDetector' `
     '/v:master' `
     '/d:sonar.cs.opencover.reportsPaths=**\opencover-report.xml' `
     '/d:sonar.cs.xunit.reportsPaths=**\xunit-report.xml'
-MSBuild /p:Configuration=Release
+MSBuild -m -p:Configuration=Release -t:restore -t:build
 dir -Recurse */bin/*.Tests.dll | ForEach-Object {
     Push-Location $_.Directory
     Write-Host "Running the unit tests in $($_.Name)..."
