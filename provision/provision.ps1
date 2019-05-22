@@ -19,14 +19,14 @@ $sonarQubePassword = 'admin'
 
 # download SonarQube.
 $path = "$($env:TEMP)\SonarQube"
-$sonarQubeVersion = '6.7.2'
-$sonarQubeZipUrl = "https://sonarsource.bintray.com/Distribution/sonarqube/sonarqube-$sonarQubeVersion.zip"
-$sonarQubeZipHash = '6efa2551d2c1f26cf40e000522226292'
+$sonarQubeVersion = '6.7.7'
+$sonarQubeZipUrl = "https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-$sonarQubeVersion.zip"
+$sonarQubeZipHash = 'c3b9cdb6188a8fbf12dfefff38779fe48beb440794c1c91e6122c36966afb185'
 $sonarQubeZip = "$path\sonarqube-$sonarQubeVersion.zip"
 mkdir -Force $path | Out-Null
 (New-Object Net.WebClient).DownloadFile($sonarQubeZipUrl, $sonarQubeZip)
 $s = New-Object IO.FileStream $sonarQubeZip, 'Open'
-$sonarQubeZipActualHash = [BitConverter]::ToString([Security.Cryptography.MD5]::Create().ComputeHash($s)).Replace('-', '')
+$sonarQubeZipActualHash = [BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash($s)).Replace('-', '')
 $s.Close()
 if ($sonarQubeZipActualHash -ne $sonarQubeZipHash) {
     throw "$sonarQubeZipUrl does not match the expected hash"
