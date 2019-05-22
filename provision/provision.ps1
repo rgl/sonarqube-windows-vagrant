@@ -89,9 +89,9 @@ choco install -y nuget.commandline
 choco install -y xunit
 # NB we need to install a recent (non-released) version due
 #    to https://github.com/OpenCover/opencover/issues/736
-Push-Location opencover.portable
+Push-Location opencover-rgl.portable
 choco pack
-choco install -y opencover.portable -Source $PWD
+choco install -y opencover-rgl.portable -Source $PWD
 Pop-Location
 choco install -y reportgenerator.portable
 choco install -y msbuild-sonarqube-runner
