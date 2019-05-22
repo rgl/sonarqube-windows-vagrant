@@ -7,7 +7,11 @@ choco install -y 7zip
 choco install -y googlechrome
 
 # dependencies.
-choco install -y jre8
+choco install -y adoptopenjdk8jre
+
+# update $env:PATH with the recently installed Chocolatey packages.
+Import-Module "$env:ChocolateyInstall\helpers\chocolateyInstaller.psm1"
+Update-SessionEnvironment
 
 $sonarQubeUrl = 'http://localhost:9000'
 $sonarQubeUsername = 'admin'
