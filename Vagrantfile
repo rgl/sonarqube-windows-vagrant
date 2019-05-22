@@ -1,6 +1,14 @@
 Vagrant.configure("2") do |config|
     config.vm.box = "windows-2019-amd64"
 
+    config.vm.provider :libvirt do |lv, config|
+        lv.cpu_mode = 'host-passthrough'
+        lv.cpus = 2
+        lv.memory = 4096
+        lv.keymap = 'pt'
+        config.vm.synced_folder '.', '/vagrant', type: 'smb', smb_username: ENV['USER'], smb_password: ENV['VAGRANT_SMB_PASSWORD']
+    end
+
     config.vm.provider :virtualbox do |v, override|
         v.linked_clone = true
         v.cpus = 2
