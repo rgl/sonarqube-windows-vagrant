@@ -98,10 +98,10 @@ choco pack
 choco install -y opencover-rgl.portable -Source $PWD
 Pop-Location
 choco install -y reportgenerator.portable
-choco install -y msbuild-sonarqube-runner
+choco install -y sonarscanner-msbuild-net46
 
 # configure the SonarQube runner credentials.
-$configPath = 'C:\ProgramData\chocolatey\lib\msbuild-sonarqube-runner\tools\SonarQube.Analysis.xml'
+$configPath = 'C:\ProgramData\chocolatey\lib\sonarscanner-msbuild-net46\tools\SonarQube.Analysis.xml'
 $configXml = [xml](Get-Content $configPath)
 $configNs = 'http://www.sonarsource.com/msbuild/integration/2015/1'
 $ns = New-Object Xml.XmlNamespaceManager($configXml.NameTable); $ns.AddNamespace('c', $configNs)
@@ -132,7 +132,7 @@ git config --global push.default simple
 Push-Location $env:USERPROFILE
 git clone --quiet https://github.com/rgl/MailBounceDetector.git
 cd MailBounceDetector
-MSBuild.SonarQube.Runner begin `
+SonarScanner.MSBuild begin `
     '/k:github.com_rgl_MailBounceDetector' `
     '/n:github.com/rgl/MailBounceDetector' `
     '/v:master' `
@@ -157,7 +157,7 @@ dir -Recurse */bin/*.Tests.dll | ForEach-Object {
         -DestinationPath coverage-report.zip
     Pop-Location
 }
-MSBuild.SonarQube.Runner end
+SonarScanner.MSBuild end
 Pop-Location
 
 
