@@ -18,7 +18,7 @@ Vagrant.configure("2") do |config|
     end
 
     config.vm.provision "shell", path: "provision/locale.ps1"
-    config.vm.provision "shell", inline: "$env:chocolateyVersion='0.10.8'; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))"
+    config.vm.provision "shell", inline: "$env:chocolateyVersion='0.10.13'; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))"
     config.vm.provision "shell", inline: "cd c:/vagrant/provision; . ./provision-vs-build-tools.ps1", name: "Provision Visual Studio Build Tools"
     config.vm.provision :reload
     config.vm.provision "shell", inline: "cd c:/vagrant/provision; . ./provision.ps1", name: "Provision"
