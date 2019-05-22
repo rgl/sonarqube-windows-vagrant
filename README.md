@@ -3,14 +3,14 @@ This is a [Vagrant](https://www.vagrantup.com/) Environment for a [SonarQube](ht
 This will:
 
 * Install a SonarQube instance and configure it through its [Web API](http://docs.sonarqube.org/display/DEV/Web+API).
-* Install [Visual Studio Build Tools 2017](https://www.visualstudio.com/downloads/).
-* Install the [MSBuild SonarQube Runner](http://docs.sonarqube.org/display/SCAN/Analyzing+with+SonarQube+Scanner+for+MSBuild).
+* Install [Visual Studio Build Tools 2019](https://www.visualstudio.com/downloads/).
+* Install the [SonarScanner for MSBuild](http://docs.sonarqube.org/display/SCAN/Analyzing+with+SonarQube+Scanner+for+MSBuild).
 * Analyse a C# project ([MailBounceDetector](https://github.com/rgl/MailBounceDetector)); including its [XUnit](https://xunit.github.io/) Unit Tests and an [OpenCover](https://github.com/OpenCover/opencover) Code Coverage report.
 
 
 # Usage
 
-Build and install the [Windows Base Box](https://github.com/rgl/windows-2016-vagrant).
+Build and install the [Windows 2019 Base Box](https://github.com/rgl/windows-2016-vagrant).
 
 Install the needed plugins:
 
@@ -30,7 +30,7 @@ vagrant up
 [`sonar.exclusions`](http://docs.sonarqube.org/display/SONAR/Narrowing+the+Focus)
 (and other paths) are relative to the project directory, as such, they can only
 exclude files inside a project. to exclude the project itself you have to use
-one of the following (before calling `MSBuild.SonarQube.Runner begin`):
+one of the following (before calling `SonarScanner.MSBuild begin`):
 
 1. Modify each `.csproj` file to have the following element:
 
@@ -54,8 +54,8 @@ one of the following (before calling `MSBuild.SonarQube.Runner begin`):
    inside the current user or the local machine MSBuild directories, that is, at one of:
 
     ```
-    C:\Users\<User>\AppData\Local\Microsoft\MSBuild\14.0\Microsoft.Common.targets\ImportBefore
-    C:\Program Files (x86)\MSBuild\14.0\Microsoft.Common.Targets\ImportBefore
+    C:\Users\<User>\AppData\Local\Microsoft\MSBuild\15.0\Microsoft.Common.targets\ImportBefore
+    C:\Program Files (x86)\MSBuild\15.0\Microsoft.Common.Targets\ImportBefore
     ```
 
    **NB** these directories are scanned before the `<Project>.csproj.user` file.
