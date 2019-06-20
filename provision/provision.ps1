@@ -89,7 +89,6 @@ Wait-ForReady
 
 choco install -y git --params '/GitOnlyOnPath /NoAutoCrlf'
 choco install -y gitextensions
-choco install -y nuget.commandline
 choco install -y xunit
 # NB we need to install a recent (non-released) version due
 #    to https://github.com/OpenCover/opencover/issues/736
