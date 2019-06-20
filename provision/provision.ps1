@@ -75,11 +75,11 @@ Wait-ForReady
 @(
     'ldap'            # http://docs.sonarqube.org/display/PLUG/LDAP+Plugin
     'checkstyle'      # https://github.com/checkstyle/sonar-checkstyle
-) | %{
+) | ForEach-Object {
     Write-Host "installing the $_ plugin..."
     Invoke-RestMethod -Headers $headers -Method Post -Uri $sonarQubeUrl/api/plugins/install -Body @{key=$_}
 }
-echo 'restarting SonarQube...'
+Write-Host 'restarting SonarQube...'
 Invoke-RestMethod -Headers $headers -Method Post -Uri $sonarQubeUrl/api/system/restart
 Wait-ForReady
 
@@ -131,7 +131,7 @@ git config --global push.default simple
 # build a project and send it to SonarQube.
 Push-Location $env:USERPROFILE
 git clone --quiet https://github.com/rgl/MailBounceDetector.git
-cd MailBounceDetector
+Set-Location MailBounceDetector
 SonarScanner.MSBuild begin `
     '/k:github.com_rgl_MailBounceDetector' `
     '/n:github.com/rgl/MailBounceDetector' `
@@ -139,7 +139,7 @@ SonarScanner.MSBuild begin `
     '/d:sonar.cs.opencover.reportsPaths=**\opencover-report.xml' `
     '/d:sonar.cs.xunit.reportsPaths=**\xunit-report.xml'
 MSBuild -m -p:Configuration=Release -t:restore -t:build
-dir -Recurse */bin/*.Tests.dll | ForEach-Object {
+Get-ChildItem -Recurse */bin/*.Tests.dll | ForEach-Object {
     Push-Location $_.Directory
     Write-Host "Running the unit tests in $($_.Name)..."
     OpenCover.Console `
