@@ -6,6 +6,10 @@ choco install -y notepad2
 choco install -y 7zip
 choco install -y googlechrome
 
+# set the default browser.
+choco install -y SetDefaultBrowser
+SetDefaultBrowser HKLM 'Google Chrome'
+
 # dependencies.
 choco install -y adoptopenjdk8jre
 
