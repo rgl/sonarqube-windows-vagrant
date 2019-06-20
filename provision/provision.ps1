@@ -137,7 +137,16 @@ SonarScanner.MSBuild begin `
     '/v:master' `
     '/d:sonar.cs.opencover.reportsPaths=**\opencover-report.xml' `
     '/d:sonar.cs.xunit.reportsPaths=**\xunit-report.xml'
-MSBuild -m -p:Configuration=Release -t:restore -t:build
+# retry the restore because it sometimes fails... but eventually succeeds.
+while ($true) {
+    MSBuild -m -p:Configuration=Release -t:restore
+    if ($LASTEXITCODE -eq 0) {
+        break
+    }
+    Start-Sleep -Seconds 1
+    Write-Host 'Retrying the package restore...'
+}
+MSBuild -m -p:Configuration=Release -t:build
 Get-ChildItem -Recurse */bin/*.Tests.dll | ForEach-Object {
     Push-Location $_.Directory
     Write-Host "Running the unit tests in $($_.Name)..."
