@@ -87,6 +87,12 @@ Write-Host 'restarting SonarQube...'
 Invoke-RestMethod -Headers $headers -Method Post -Uri $sonarQubeUrl/api/system/restart
 Wait-ForReady
 
+# add shortcut to the desktop.
+Set-Content -Encoding Ascii "$env:USERPROFILE\Desktop\SonarQube.url" @"
+[InternetShortcut]
+URL=http://localhost:9000
+"@
+
 
 #
 # build a C# project, analyse and send it to SonarQube.
