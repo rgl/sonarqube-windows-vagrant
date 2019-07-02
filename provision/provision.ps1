@@ -17,15 +17,72 @@ choco install -y adoptopenjdk8jre
 Import-Module "$env:ChocolateyInstall\helpers\chocolateyInstaller.psm1"
 Update-SessionEnvironment
 
+# add certificates to the default java trust store.
+Get-ChildItem C:\vagrant\tmp\*.der -ErrorAction SilentlyContinue | ForEach-Object {
+    $certificatePath = $_.FullName
+    $alias = $_.BaseName.ToLower()
+    @(
+        'C:\Program Files\Java\jre*\lib\security\cacerts'
+        'C:\Program Files\Java\jdk*\jre\lib\security\cacerts'
+        'C:\Program Files\AdoptOpenJDK\*jre\lib\security\cacerts'
+        'C:\Program Files\AdoptOpenJDK\*jdk\jre\lib\security\cacerts'
+    ) | ForEach-Object {Get-ChildItem $_ -ErrorAction SilentlyContinue} | ForEach-Object {
+        $keyStore = $_
+        $keytool = Resolve-Path "$keyStore\..\..\..\bin\keytool.exe"
+        # delete the existing alias if it exists.
+        $keytoolOutput = &$keytool `
+            -noprompt `
+            -delete `
+            -storepass changeit `
+            -keystore $keyStore `
+            -alias $alias
+        if ($LASTEXITCODE -and ($keytoolOutput -notmatch 'keytool error: java.lang.Exception: Alias .+ does not exist')) {
+            Write-Host $keytoolOutput
+            throw "failed to delete $alias from keystore $keyStore"
+        }
+        # add the certificate.
+        Write-Host "Adding $alias to the java $keyStore keystore..."
+        # NB we use Start-Process because keytool writes to stderr... and that
+        #    triggers PowerShell to fail, so we work around this by redirecting
+        #    stdout and stderr to a temporary file.
+        # NB keytool exit code is always 1, so we cannot rely on that.
+        Start-Process `
+            -FilePath $keytool `
+            -ArgumentList `
+                '-noprompt',
+                '-import',
+                '-trustcacerts',
+                '-storepass changeit',
+                "-keystore `"$keyStore`"",
+                "-alias `"$alias`"",
+                "-file `"$certificatePath`"" `
+            -RedirectStandardOutput "$env:TEMP\keytool-stdout.txt" `
+            -RedirectStandardError "$env:TEMP\keytool-stderr.txt" `
+            -NoNewWindow `
+            -Wait
+        $keytoolOutput = Get-Content -Raw "$env:TEMP\keytool-stdout.txt","$env:TEMP\keytool-stderr.txt"
+        if ($keytoolOutput -notmatch 'Certificate was added to keystore') {
+            Write-Host $keytoolOutput
+            throw "failed to import $alias to keystore $keyStore"
+        }
+    }
+}
+
+# add hosts entries.
+Add-Content -Encoding Ascii "$env:WINDIR\System32\drivers\etc\hosts" "192.168.56.2 dc.example.com`n"
+
+# set variables.
 $sonarQubeUrl = 'http://localhost:9000'
 $sonarQubeUsername = 'admin'
 $sonarQubePassword = 'admin'
-
-# download SonarQube.
-$path = "$($env:TEMP)\SonarQube"
 $sonarQubeVersion = '6.7.7'
 $sonarQubeZipUrl = "https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-$sonarQubeVersion.zip"
 $sonarQubeZipHash = 'c3b9cdb6188a8fbf12dfefff38779fe48beb440794c1c91e6122c36966afb185'
+$sonarQubeHome = "C:\sonarqube-$sonarQubeVersion"
+
+# download SonarQube.
+Write-Host 'Downloading SonarQube...'
+$path = "$($env:TEMP)\SonarQube"
 $sonarQubeZip = "$path\sonarqube-$sonarQubeVersion.zip"
 mkdir -Force $path | Out-Null
 (New-Object Net.WebClient).DownloadFile($sonarQubeZipUrl, $sonarQubeZip)
@@ -35,22 +92,24 @@ $s.Close()
 if ($sonarQubeZipActualHash -ne $sonarQubeZipHash) {
     throw "$sonarQubeZipUrl does not match the expected hash"
 }
+Write-Host 'Installing SonarQube...'
 # extract it.
 $shell = New-Object -COM Shell.Application
 $shell.NameSpace($sonarQubeZip).items() | %{ $shell.NameSpace($path).CopyHere($_) }
 Move-Item "$path\sonarqube-$sonarQubeVersion" C:\
 # install the service.
-&C:\sonarqube-$sonarQubeVersion\bin\windows-x86-64\InstallNTService.bat
+&$sonarQubeHome\bin\windows-x86-64\InstallNTService.bat
 if ($LASTEXITCODE) {
     throw "failed to install the SonarQube service with LASTEXITCODE=$LASTEXITCODE"
 }
 # TODO run the service in a non-system account.
 # start the service.
-&C:\sonarqube-$sonarQubeVersion\bin\windows-x86-64\StartNTService.bat
+&$sonarQubeHome\bin\windows-x86-64\StartNTService.bat
 if ($LASTEXITCODE) {
     throw "failed to start the SonarQube service with LASTEXITCODE=$LASTEXITCODE"
 }
 
+Write-Host 'Waiting for SonarQube to start...'
 # wait for it be available.
 $headers = @{
     Authorization = ("Basic {0}" -f [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(("{0}:{1}" -f $sonarQubeUsername,$sonarQubePassword))))
@@ -83,8 +142,35 @@ Wait-ForReady
     Write-Host "installing the $_ plugin..."
     Invoke-RestMethod -Headers $headers -Method Post -Uri $sonarQubeUrl/api/plugins/install -Body @{key=$_}
 }
+
+# configure LDAP.
+# see https://docs.sonarqube.org/display/SONARQUBE67/LDAP+Plugin
+Add-Content -Encoding Ascii "$sonarQubeHome\conf\sonar.properties" @'
+
+#--------------------------------------------------------------------------------------------------
+# LDAP
+
+# General Configuration.
+sonar.security.realm=LDAP
+ldap.url=ldaps://dc.example.com
+ldap.bindDn=jane.doe@example.com
+ldap.bindPassword=HeyH0Password
+
+# User Configuration.
+ldap.user.baseDn=CN=Users,DC=example,DC=com
+ldap.user.request=(&(sAMAccountName={login})(objectClass=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))
+ldap.user.realNameAttribute=displayName
+ldap.user.emailAttribute=mail
+
+# Group Configuration.
+ldap.group.baseDn=CN=Users,DC=example,DC=com
+ldap.group.request=(&(objectClass=group)(member={dn}))
+ldap.group.idAttribute=sAMAccountName
+'@
+
+# restart SonarQube.
 Write-Host 'restarting SonarQube...'
-Invoke-RestMethod -Headers $headers -Method Post -Uri $sonarQubeUrl/api/system/restart
+Restart-Service SonarQube
 Wait-ForReady
 
 # add shortcut to the desktop.
@@ -193,4 +279,4 @@ Write-Host 'Installed Plugins:'
 Write-Host "You can now access the SonarQube Web UI at $sonarQubeUrl"
 Write-Host "The default user and password are admin"
 Write-Host "Check for updates at $sonarQubeUrl/updatecenter/installed"
-Write-Host "Check the logs at C:\sonarqube-$sonarQubeVersion\logs"
+Write-Host "Check the logs at $sonarQubeHome\logs"

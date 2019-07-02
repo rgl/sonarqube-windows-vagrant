@@ -3,6 +3,9 @@ This is a [Vagrant](https://www.vagrantup.com/) Environment for a [SonarQube](ht
 This will:
 
 * Install a SonarQube instance and configure it through its [Web API](http://docs.sonarqube.org/display/DEV/Web+API).
+  * With LDAP integration (this assumes that [rgl/windows-domain-controller-vagrant](https://github.com/rgl/windows-domain-controller-vagrant) is up and running).
+    * Login as `john.doe` (belongs to the `sonar-administrators` group).
+    * Login as `jane.doe` (does not belong to the `sonar-administrators` group).
 * Install [Visual Studio Build Tools 2019](https://www.visualstudio.com/downloads/).
 * Install the [SonarScanner for MSBuild](http://docs.sonarqube.org/display/SCAN/Analyzing+with+SonarQube+Scanner+for+MSBuild).
 * Analyse a C# project ([MailBounceDetector](https://github.com/rgl/MailBounceDetector)); including its [XUnit](https://xunit.github.io/) Unit Tests and an [OpenCover](https://github.com/OpenCover/opencover) Code Coverage report.
@@ -15,7 +18,7 @@ Build and install the [Windows 2019 Base Box](https://github.com/rgl/windows-201
 Install the needed plugins:
 
 ```bash
-vagrant plugin install vagrant-reload # https://github.com/aidanns/vagrant-reload 
+vagrant plugin install vagrant-reload # https://github.com/aidanns/vagrant-reload
 ```
 
 Then start this environment:
@@ -61,7 +64,7 @@ one of the following (before calling `SonarScanner.MSBuild begin`):
    **NB** these directories are scanned before the `<Project>.csproj.user` file.
 
    **NB** before importing the files MSBuild sorts them by file name; e.g. to import a file
-   last giveit a, e.g. `ZZZ` prefix.
+   last give it a, e.g. `ZZZ` prefix.
 
 For more information see:
 

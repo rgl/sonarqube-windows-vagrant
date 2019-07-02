@@ -22,4 +22,21 @@ Vagrant.configure("2") do |config|
     config.vm.provision "shell", inline: "cd c:/vagrant/provision; . ./provision-vs-build-tools.ps1", name: "Provision Visual Studio Build Tools"
     config.vm.provision :reload
     config.vm.provision "shell", inline: "cd c:/vagrant/provision; . ./provision.ps1", name: "Provision"
+
+    config.trigger.before :up do |trigger|
+        trigger.run = {
+            inline: '''bash -euc \'
+certs=(
+    ../windows-domain-controller-vagrant/tmp/ExampleEnterpriseRootCA.der
+)
+for cert_path in "${certs[@]}"; do
+    if [ -f $cert_path ]; then
+        mkdir -p tmp
+        cp $cert_path tmp
+    fi
+done
+\'
+'''
+        }
+    end
 end
