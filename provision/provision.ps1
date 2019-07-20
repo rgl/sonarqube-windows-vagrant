@@ -227,10 +227,13 @@ git config --global push.default simple
 Push-Location $env:USERPROFILE
 git clone --quiet https://github.com/rgl/MailBounceDetector.git
 Set-Location MailBounceDetector
+# NB "/d:sonar.branch.name=$(git rev-parse --abbrev-ref HEAD)"
+#     can only be used on the SonarQube non-Community edition.
 SonarScanner.MSBuild begin `
     '/k:github.com_rgl_MailBounceDetector' `
     '/n:github.com/rgl/MailBounceDetector' `
-    '/v:master' `
+    "/v:$(git rev-parse HEAD)" `
+    "/d:sonar.links.scm=$(git remote get-url origin)" `
     '/d:sonar.cs.opencover.reportsPaths=**\opencover-report.xml' `
     '/d:sonar.cs.xunit.reportsPaths=**\xunit-report.xml'
 # retry the restore because it sometimes fails... but eventually succeeds.
