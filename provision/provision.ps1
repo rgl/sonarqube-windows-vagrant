@@ -11,7 +11,7 @@ choco install -y SetDefaultBrowser
 SetDefaultBrowser HKLM 'Google Chrome'
 
 # dependencies.
-choco install -y adoptopenjdk8jre
+choco install -y adoptopenjdk11jre
 
 # update $env:PATH with the recently installed Chocolatey packages.
 Import-Module "$env:ChocolateyInstall\helpers\chocolateyInstaller.psm1"
@@ -75,9 +75,9 @@ Add-Content -Encoding Ascii "$env:WINDIR\System32\drivers\etc\hosts" "192.168.56
 $sonarQubeUrl = 'http://localhost:9000'
 $sonarQubeUsername = 'admin'
 $sonarQubePassword = 'admin'
-$sonarQubeVersion = '6.7.7'
+$sonarQubeVersion = '7.9.1'
 $sonarQubeZipUrl = "https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-$sonarQubeVersion.zip"
-$sonarQubeZipHash = 'c3b9cdb6188a8fbf12dfefff38779fe48beb440794c1c91e6122c36966afb185'
+$sonarQubeZipHash = '67f3ccae79245397480b0947d7a0b5661dc650b87f368b39365044ebcc88ada0'
 $sonarQubeHome = "C:\sonarqube-$sonarQubeVersion"
 
 # download SonarQube.
@@ -97,6 +97,13 @@ Write-Host 'Installing SonarQube...'
 $shell = New-Object -COM Shell.Application
 $shell.NameSpace($sonarQubeZip).items() | %{ $shell.NameSpace($path).CopyHere($_) }
 Move-Item "$path\sonarqube-$sonarQubeVersion" C:\
+# patch the batches for not pausing on error as that prevents automated installations.
+Get-ChildItem $sonarQubeHome\bin\windows-x86-64\*.bat | ForEach-Object {
+    Set-Content -Encoding Ascii $_ (
+        (Get-Content $_) `
+            -replace '^pause$','exit /b %errorlevel%'
+    )
+}
 # install the service.
 &$sonarQubeHome\bin\windows-x86-64\InstallNTService.bat
 if ($LASTEXITCODE) {
@@ -120,15 +127,26 @@ function Wait-ForReady {
 Wait-ForReady
 
 # list out-of-box installed plugins. at the time of writing they were:
+#   authgithub
+#   authsaml
 #   csharp
+#   cssfamily
 #   flex
+#   go
+#   jacoco
 #   java
 #   javascript
+#   kotlin
+#   ldap
 #   php
 #   python
+#   ruby
 #   scmgit
 #   scmsvn
+#   sonarscala
 #   typescript
+#   vbnet
+#   web
 #   xml
 (Invoke-RestMethod -Headers $headers -Method Get -Uri $sonarQubeUrl/api/plugins/installed).plugins `
     | Sort-Object -Property key `
@@ -136,7 +154,6 @@ Wait-ForReady
 
 # install plugins.
 @(
-    'ldap'            # http://docs.sonarqube.org/display/PLUG/LDAP+Plugin
     'checkstyle'      # https://github.com/checkstyle/sonar-checkstyle
 ) | ForEach-Object {
     Write-Host "installing the $_ plugin..."
@@ -144,7 +161,7 @@ Wait-ForReady
 }
 
 # configure LDAP.
-# see https://docs.sonarqube.org/display/SONARQUBE67/LDAP+Plugin
+# see https://docs.sonarqube.org/7.9/instance-administration/delegated-auth/
 Add-Content -Encoding Ascii "$sonarQubeHome\conf\sonar.properties" @'
 
 #--------------------------------------------------------------------------------------------------
@@ -224,6 +241,7 @@ git config --global user.email vagrant@example.com
 git config --global push.default simple
 
 # build a project and send it to SonarQube.
+# see https://docs.sonarqube.org/7.9/analysis/analysis-parameters/
 Push-Location $env:USERPROFILE
 git clone --quiet https://github.com/rgl/MailBounceDetector.git
 Set-Location MailBounceDetector
